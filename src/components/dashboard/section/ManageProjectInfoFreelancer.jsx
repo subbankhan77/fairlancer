@@ -135,7 +135,7 @@ export default function ManageProjectInfoFreelancer() {
     
     console.log("applicationId", applicationId);
     
-    if (!confirm("Are you sure you want to withdraw this application? not changes add")) {
+    if (!confirm("Are you sure you want to withdraw this application?")) {
       return;
     }
 
