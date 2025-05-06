@@ -12,14 +12,6 @@ const api = axios.create({
 api.interceptors.request.use(async (config) => {
   const session = await getSession();
   
-  // More detailed logging to debug session data
-  // console.log("Session in API interceptor:", {
-  //   hasSession: !!session,
-  //   accessToken: !!session?.accessToken,
-  //   user: session?.user,
-  //   role: session?.user?.role
-  // });
-  
   if (session?.accessToken) {
     config.headers.Authorization = `Bearer ${session.accessToken}`;
   }
@@ -34,8 +26,6 @@ api.interceptors.request.use(async (config) => {
 
 api.interceptors.response.use(
   (response) => {
-    // If the response includes user data with role, we could update the session here
-    // This would require additional implementation with the session update API
     return response;
   },
   (error) => {

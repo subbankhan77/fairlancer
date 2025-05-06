@@ -110,6 +110,20 @@ export const menuConfig = {
                 name: "Find Projects",
                 icon: "flaticon-search",
                 path: "/projects",
+            },
+            // create new project
+            {
+                id: 4,
+                name: "Create New Project",
+                icon: "flaticon-add",
+                path: "/create-project",
+            },
+            // new project (additional new menu item)
+            {
+                id: 5,
+                name: "New Project",
+                icon: "flaticon-plus-circle",
+                path: "/new-project",
             }
         ],
         account: [
