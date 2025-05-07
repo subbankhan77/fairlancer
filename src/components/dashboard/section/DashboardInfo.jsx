@@ -277,6 +277,7 @@ export default async function DashboardInfo() {
             <div className="dashboard_title_area">
               <h2>Dashboard</h2>
               <p className="text">Welcome Back {session?.user?.name}</p>
+              <p className="text">Role :- <b><u>{session?.user?.role}</u> </b></p>
             </div>
           </div>
         </div>

@@ -55,6 +55,28 @@
 //     }
 //   };
 
+//   // Determine if user is company/agency or individual
+//   const isCompanyOrAgency = () => {
+//     return session?.user?.role === 'company' || session?.user?.role === 'agency';
+//   };
+
+//   // Get the proper settings name based on user role
+//   const getSettingsName = () => {
+//     if (session?.user?.role === 'company') return 'Company Settings';
+//     if (session?.user?.role === 'agency') return 'Agency Settings';
+//     return 'Settings';
+//   };
+
+//   // Navigate to teams page or company/agency settings
+//   const handleTeamsNavigation = () => {
+//     const role = session?.user?.role;
+//     if (role === 'company') {
+//       router.push('/company/settings?tab=teams');
+//     } else if (role === 'agency') {
+//       router.push('/agency/settings?tab=teams');
+//     }
+//   };
+
 //   useEffect(() => {
 //     if (session?.user) {
 //       // Fix image path if it contains duplicate "/images/" segments
@@ -63,11 +85,17 @@
 //         userData.image = userData.image.replace("/images//images/", "/images/");
 //       }
 //       setUser(userData);
+      
+//       // Get menus from menuConfig based on user role
+//       let userMenus = { ...menuConfig[userData.role] || menuConfig.default || {} };
+      
+//       // For proper logging and debugging
+//       console.log("Original menus:", userMenus);
+      
+//       setMenus(userMenus);
 //     } else {
 //       setUser(null);
 //     }
-    
-//     setMenus(menuConfig[session?.user?.role]);
     
 //     // Log for debugging
 //     console.log("Profile image path:", session?.user?.image);
@@ -146,6 +174,39 @@
 //               <div className="col-6 col-lg-auto">
 //                 <div className="text-center text-lg-end header_right_widgets">
 //                   <ul className="dashboard_dd_menu_list d-flex align-items-center justify-content-center justify-content-sm-end mb-0 p-0">
+//                     {/* Quick Action Button - NEW */}
+//                     {isCompanyOrAgency() && (
+//                       <li className="d-none d-sm-block me-3">
+//                         <div className="dropdown">
+//                           <button
+//                             className="ud-btn btn-thm dropdown-toggle"
+//                             type="button"
+//                             data-bs-toggle="dropdown"
+//                             aria-expanded="false"
+//                           >
+//                             <i className="flaticon-add me-1"></i> Quick Actions
+//                           </button>
+//                           <ul className="dropdown-menu dropdown-menu-end">
+//                             <li>
+//                               <Link className="dropdown-item" href="/projects/create">
+//                                 <i className="flaticon-document me-2"></i> New Project
+//                               </Link>
+//                             </li>
+//                             <li>
+//                               <a className="dropdown-item" href="#" onClick={handleTeamsNavigation}>
+//                                 <i className="flaticon-group me-2"></i> Manage Teams
+//                               </a>
+//                             </li>
+//                             <li>
+//                               <Link className="dropdown-item" href="/tasks/create">
+//                                 <i className="flaticon-checklist me-2"></i> New Task
+//                               </Link>
+//                             </li>
+//                           </ul>
+//                         </div>
+//                       </li>
+//                     )}
+                    
 //                     {/* Deactivate Account Button */}
 //                     <li className="d-none d-sm-block me-3">
 //                       <button
@@ -384,6 +445,7 @@
 //                             <p className="fz15 fw400 ff-heading mb10 pl30">
 //                               Account
 //                             </p>
+//                             {/* Render original menu items */}
 //                             {menus?.account?.map((item,i) => (
 //                               <Link
 //                                 key={i}
@@ -396,6 +458,40 @@
 //                                 {item.name}
 //                               </Link>
 //                             ))}
+                            
+//                             {/* Add Company/Agency Settings only if user is company/agency */}
+//                             {isCompanyOrAgency() && (
+//                               <Link
+//                                 className={`dropdown-item ${
+//                                   path === `/${session?.user?.role}/settings` ? "active" : ""
+//                                 }`}
+//                                 href={`/${session?.user?.role}/settings?tab=teams`}
+//                               >
+//                                 <i className="flaticon-setting mr10" />
+//                                 {getSettingsName()}
+//                               </Link>
+//                             )}
+                            
+//                             {/* Add My Info Item */}
+//                             <Link
+//                               className={`dropdown-item ${
+//                                 path === "/my-info" ? "active" : ""
+//                               }`}
+//                               href="/teams"
+//                             >
+//                               <i className="flaticon-user mr10" />
+//                               My Info
+//                             </Link>
+                            
+//                             {/* Add Logout Item */}
+//                             {/* <a
+//                               className="dropdown-item"
+//                               href="#"
+//                               onClick={() => signOut({ redirect: true, callbackUrl: '/' })}
+//                             >
+//                               <i className="flaticon-logout mr10" />
+//                               Logout
+//                             </a> */}
 //                           </div>
 //                         </div>
 //                       </div>
@@ -411,11 +507,8 @@
 //   );
 // }
 
-
-
 "use client";
 import { useEffect, useState } from "react";
-import { dasboardNavigation } from "@/data/dashboard";
 import toggleStore from "@/store/toggleStore";
 import Image from "next/image";
 import Link from "next/link";
@@ -434,9 +527,37 @@ export default function DashboardHeader() {
   const [user, setUser] = useState(null);
   const [menus, setMenus] = useState([]);
   const [deactivating, setDeactivating] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const toggle = toggleStore((state) => state.dashboardSlidebarToggleHandler);
   const path = usePathname();
   const router = useRouter();
+
+  // Function to handle logout with proper redirection
+  const handleLogout = async (e) => {
+    e.preventDefault();
+    
+    if (isLoggingOut) return; // Prevent multiple clicks
+    
+    try {
+      setIsLoggingOut(true);
+      
+      // First show a success message
+      toast.success('Logging out...');
+      
+      // Then sign out without automatic redirect
+      await signOut({ redirect: false });
+      
+      // Manual redirect after short delay to ensure state update
+      setTimeout(() => {
+        router.push('/login');
+      }, 300);
+      
+    } catch (error) {
+      console.error('Error logging out:', error);
+      toast.error('Logout failed. Please try again.');
+      setIsLoggingOut(false);
+    }
+  };
 
   // Function to handle account deactivation using the service
   const handleDeactivateAccount = async () => {
@@ -533,6 +654,21 @@ export default function DashboardHeader() {
     // Return the original path if no issues found
     return user.image;
   };
+
+  // Render a simple loading state if logging out
+  if (isLoggingOut) {
+    return (
+      <div className="logout-screen d-flex justify-content-center align-items-center" style={{ height: '100vh' }}>
+        <div className="text-center">
+          <div className="spinner-border text-primary mb-3" role="status">
+            <span className="visually-hidden">Logging out...</span>
+          </div>
+          <h5>Signing out...</h5>
+          <p>You will be redirected shortly.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -898,11 +1034,11 @@ export default function DashboardHeader() {
                               My Info
                             </Link>
                             
-                            {/* Add Logout Item */}
+                            {/* Re-enabled Logout Item with proper handler */}
                             {/* <a
                               className="dropdown-item"
                               href="#"
-                              onClick={() => signOut({ redirect: true, callbackUrl: '/' })}
+                              onClick={handleLogout}
                             >
                               <i className="flaticon-logout mr10" />
                               Logout

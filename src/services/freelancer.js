@@ -69,5 +69,10 @@ async startQuestionnaire(data) {
  async finalizeProject(data) {
   const response = await api.post(`/ai/finalize-project`, data);
   return response.data;
-}
+},
+//Forgot Password
+async forgotPassword(data) {
+  const response = await api.post(`/api/forgot-password`, data);
+  return response.data;
+},
 };

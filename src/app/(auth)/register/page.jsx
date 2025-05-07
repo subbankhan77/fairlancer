@@ -16,7 +16,7 @@
 // // API service
 // import { authService } from "@/services/auth";
 
-// // Validation schema using Yup
+// // Validation schema using Yup - SIMPLIFIED PASSWORD VALIDATION
 // const registerValidationSchema = Yup.object({
 //   name: Yup.string().trim().required("Name is required"),
 //   email: Yup.string()
@@ -24,40 +24,25 @@
 //     .email("Please enter a valid email address")
 //     .required("Email is required"),
 //   password: Yup.string()
-//     .min(8, "Password must be at least 8 characters")
-//     .matches(
-//       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
-//       "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character"
-//     )
+//     .min(6, "Password must be at least 6 characters")
 //     .required("Password is required"),
 //   terms: Yup.boolean()
 //     .oneOf([true], "You must accept the terms and conditions")
 //     .required("You must accept the terms and conditions"),
 // });
 
-// // Password strength checker
+// // Simplified password strength checker
 // const getPasswordStrength = (password) => {
 //   if (!password) return { strength: 0, label: "Empty", color: "bg-gray-300" };
 
-//   // Check for length (8+), uppercase, lowercase, number, and special character
-//   const hasLength = password.length >= 8;
-//   const hasUppercase = /[A-Z]/.test(password);
-//   const hasLowercase = /[a-z]/.test(password);
-//   const hasNumber = /\d/.test(password);
-//   const hasSpecial = /[@$!%*?&]/.test(password);
-
-//   const checks = [hasLength, hasUppercase, hasLowercase, hasNumber, hasSpecial];
-//   const passedChecks = checks.filter(Boolean).length;
-
-//   // Calculate strength percentage (0-100%)
-//   const strength = Math.floor((passedChecks / checks.length) * 100);
-
-//   if (strength <= 20)
-//     return { strength, label: "Very Weak", color: "bg-danger" };
-//   if (strength <= 40) return { strength, label: "Weak", color: "bg-danger" };
-//   if (strength <= 60) return { strength, label: "Medium", color: "bg-warning" };
-//   if (strength <= 80) return { strength, label: "Strong", color: "bg-info" };
-//   return { strength, label: "Very Strong", color: "bg-success" };
+//   // Simple length-based strength calculation
+//   const length = password.length;
+  
+//   if (length < 6) return { strength: 20, label: "Very Weak", color: "bg-danger" };
+//   if (length < 8) return { strength: 40, label: "Weak", color: "bg-danger" };
+//   if (length < 10) return { strength: 60, label: "Medium", color: "bg-warning" };
+//   if (length < 12) return { strength: 80, label: "Strong", color: "bg-info" };
+//   return { strength: 100, label: "Very Strong", color: "bg-success" };
 // };
 
 // export default function RegisterPage() {
@@ -376,7 +361,7 @@
 //                           role="alert"
 //                         />
 
-//                         {/* Password strength meter */}
+//                         {/* Simplified Password strength meter */}
 //                         <div className="password-strength-meter my-2">
 //                           <div className="d-flex justify-content-between align-items-center mb-1">
 //                             <small className="text-muted">
@@ -406,9 +391,10 @@
 //                             ></div>
 //                           </div>
 
+//                           {/* Simplified password requirements */}
 //                           <div className="password-requirements mt-2">
 //                             <small className="d-block text-muted mb-1">
-//                               Password must contain:
+//                               Password requirements:
 //                             </small>
 //                             <ul
 //                               className="ps-3 mb-0"
@@ -416,52 +402,13 @@
 //                             >
 //                               <li
 //                                 className={
-//                                   passwordValue.length >= 8
+//                                   passwordValue.length >= 6
 //                                     ? "text-success"
 //                                     : "text-muted"
 //                                 }
 //                               >
-//                                 At least 8 characters{" "}
-//                                 {passwordValue.length >= 8 && "✓"}
-//                               </li>
-//                               <li
-//                                 className={
-//                                   /[A-Z]/.test(passwordValue)
-//                                     ? "text-success"
-//                                     : "text-muted"
-//                                 }
-//                               >
-//                                 One uppercase letter{" "}
-//                                 {/[A-Z]/.test(passwordValue) && "✓"}
-//                               </li>
-//                               <li
-//                                 className={
-//                                   /[a-z]/.test(passwordValue)
-//                                     ? "text-success"
-//                                     : "text-muted"
-//                                 }
-//                               >
-//                                 One lowercase letter{" "}
-//                                 {/[a-z]/.test(passwordValue) && "✓"}
-//                               </li>
-//                               <li
-//                                 className={
-//                                   /\d/.test(passwordValue)
-//                                     ? "text-success"
-//                                     : "text-muted"
-//                                 }
-//                               >
-//                                 One number {/\d/.test(passwordValue) && "✓"}
-//                               </li>
-//                               <li
-//                                 className={
-//                                   /[@$!%*?&]/.test(passwordValue)
-//                                     ? "text-success"
-//                                     : "text-muted"
-//                                 }
-//                               >
-//                                 One special character (@$!%*?&){" "}
-//                                 {/[@$!%*?&]/.test(passwordValue) && "✓"}
+//                                 At least 6 characters{" "}
+//                                 {passwordValue.length >= 6 && "✓"}
 //                               </li>
 //                             </ul>
 //                           </div>
@@ -547,6 +494,7 @@ import Footer from "@/components/footer/Footer";
 import Header20 from "@/components/header/Header20";
 import Option2 from "@/components/ui-elements/options/Option2";
 import { ROLE_OPTIONS } from "@/config/constant";
+import RegistrationSuccessPopup from "@/components/popups/RegistrationSuccessPopup";
 
 // API service
 import { authService } from "@/services/auth";
@@ -587,6 +535,8 @@ export default function RegisterPage() {
   const [selectedRole, setSelectedRole] = useState([]);
   const [showPassword, setShowPassword] = useState(false);
   const [passwordValue, setPasswordValue] = useState("");
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  const [userData, setUserData] = useState({});
   const nameInputRef = useRef(null);
   const isSessionLoading = status === "loading";
 
@@ -619,6 +569,12 @@ export default function RegisterPage() {
 
   const passwordStrength = getPasswordStrength(passwordValue);
 
+  const handleCloseSuccessPopup = () => {
+    setShowSuccessPopup(false);
+    // Continue with the redirect that was in your original code
+    router.push("/dashboard");
+  };
+
   const handleSubmit = async (values, { resetForm, setSubmitting }) => {
     if (!selectedRole.length) {
       toast.error("Please select a role");
@@ -643,6 +599,16 @@ export default function RegisterPage() {
         setPasswordValue("");
         toast.success("Registration successful");
 
+        // Store user data for the popup
+        setUserData({
+          name: values.name.trim(),
+          email: values.email.toLowerCase().trim(),
+          role: selectedRole[0]
+        });
+        
+        // Show the success popup
+        setShowSuccessPopup(true);
+
         // Auto login
         const loginResult = await signIn("credentials", {
           email: values.email.toLowerCase().trim(),
@@ -651,13 +617,10 @@ export default function RegisterPage() {
           redirect: false,
         });
 
-        if (loginResult?.ok) {
-          router.push("/dashboard");
-          router.refresh();
-        } else {
-          // If auto-login fails, still consider registration successful
-          // but redirect to login page instead
-          router.push("/login");
+        if (!loginResult?.ok) {
+          // If auto-login fails, update the message
+          toast.error("Auto-login failed. Please login manually.");
+          // We'll handle the redirect in the popup close handler
         }
       } else {
         toast.error("Registration failed");
@@ -702,6 +665,13 @@ export default function RegisterPage() {
 
   return (
     <div className="bgc-thm4">
+      {/* Registration Success Popup */}
+      <RegistrationSuccessPopup
+        isOpen={showSuccessPopup}
+        onClose={handleCloseSuccessPopup}
+        userData={userData}
+      />
+
       <Header20 />
       <section className="our-register py-5">
         <div className="container">

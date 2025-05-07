@@ -15,6 +15,8 @@ import Footer from "@/components/footer/Footer";
 import Header20 from "@/components/header/Header20";
 import Option2 from "@/components/ui-elements/options/Option2";
 import { ROLE_OPTIONS } from "@/config/constant";
+import FullScreenLoader from "@/components/loaders/FullScreenLoader"; // Import the loader component
+import { freelancerService } from "@/services/freelancer";
 
 // Validation schema using Yup
 const loginValidationSchema = Yup.object({
@@ -53,36 +55,41 @@ function ForgotPasswordModal({ isOpen, onClose, defaultEmail = "" }) {
   });
 
   // Set default email when prop changes
-  useEffect(() => {
-    if (defaultEmail) {
-      setValue("email", defaultEmail);
-    }
-  }, [defaultEmail, setValue]);
-
   const onSubmit = async (data) => {
     setLoading(true);
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/forgot-password`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email: data.email,
-          }),
-        }
-      );
-
-      const result = await response.json();
-
-      if (result.status) {
+      // For development/testing
+      if (window.location.hostname === 'localhost') {
+        // Mock successful response for local development
+        setTimeout(() => {
+          setSuccess(true);
+          toast.success("Password reset link sent to your email");
+          reset();
+        }, 1500);
+        return;
+      }
+      
+      // For production
+      try {
+        const response = await freelancerService.forgotPassword({
+          email: data.email.trim()
+        });
+        
+        // If we get here, the request was successful
         setSuccess(true);
         toast.success("Password reset link sent to your email");
         reset();
-      } else {
-        toast.error(result.message || "Failed to send reset link");
+      } catch (apiError) {
+        console.error("API Error Details:", apiError);
+        
+        // Check if we have a meaningful error message from the server
+        if (apiError.response && apiError.response.data && apiError.response.data.message) {
+          toast.error(apiError.response.data.message);
+        } else if (apiError.response && apiError.response.status === 500) {
+          toast.error("The server encountered an internal error. Please try again later or contact support.");
+        } else {
+          toast.error("Failed to send reset link. Please try again later.");
+        }
       }
     } catch (error) {
       console.error("Error sending reset link:", error);
@@ -213,26 +220,49 @@ export default function LoginPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [showGlobalLoader, setShowGlobalLoader] = useState(true); // Start with loader visible
+  const [loaderMessage, setLoaderMessage] = useState("Loading application..."); // Custom message for loader
   const [selectedRole, setSelectedRole] = useState([]);
   const [showPassword, setShowPassword] = useState(false);
   const [loginAttempts, setLoginAttempts] = useState(0);
   const [countdownTime, setCountdownTime] = useState(60);
   const [forgotPasswordModalOpen, setForgotPasswordModalOpen] = useState(false);
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
+  const [isRedirecting, setIsRedirecting] = useState(false); // New state to track redirection
   const emailInputRef = useRef(null);
   const isSessionLoading = status === "loading";
 
+  // Set loading state when session is loading
+  useEffect(() => {
+    if (isSessionLoading) {
+      setShowGlobalLoader(true);
+      setLoaderMessage("Checking authentication status...");
+    } else {
+      // Only hide loader if we're not redirecting
+      if (!session?.accessToken && !isRedirecting) {
+        setShowGlobalLoader(false);
+      }
+    }
+  }, [isSessionLoading, session, isRedirecting]);
+
   // Focus email input on initial load
   useEffect(() => {
-    if (emailInputRef.current && !isSessionLoading) {
+    if (emailInputRef.current && !isSessionLoading && !showGlobalLoader) {
       emailInputRef.current.focus();
     }
-  }, [isSessionLoading]);
+  }, [isSessionLoading, showGlobalLoader]);
 
   // Redirect if user is already logged in
   useEffect(() => {
     if (session?.accessToken) {
-      router.push("/dashboard");
+      setLoaderMessage("Redirecting to dashboard...");
+      setShowGlobalLoader(true);
+      setIsRedirecting(true);
+      
+      // Add a small delay before redirecting (helps ensure the loader appears)
+      setTimeout(() => {
+        router.push("/dashboard");
+      }, 500);
     }
   }, [session, router]);
 
@@ -281,6 +311,8 @@ export default function LoginPage() {
     // }
 
     setIsLoading(true);
+    setShowGlobalLoader(true); // Show full-screen loader
+    setLoaderMessage("Signing in..."); // Set custom message
 
     try {
       const result = await signIn("credentials", {
@@ -293,18 +325,27 @@ export default function LoginPage() {
       if (result?.ok) {
         resetForm();
         toast.success("Login successful");
-        router.push("/dashboard");
+        setLoaderMessage("Login successful! Redirecting...");
+        setIsRedirecting(true); // Set redirecting state
+        
+        // Add a slight delay to ensure loader is visible and toast message is shown
+        setTimeout(() => {
+          router.push("/dashboard");
+        }, 1000);
       } else {
         setLoginAttempts((prev) => prev + 1);
         toast.error(result?.error || "Invalid credentials");
+        setShowGlobalLoader(false); // Hide loader on error
       }
     } catch (error) {
       console.error("Login error:", error);
       setLoginAttempts((prev) => prev + 1);
       toast.error("Login failed");
+      setShowGlobalLoader(false); // Hide loader on error
     } finally {
       setIsLoading(false);
       setSubmitting(false);
+      // We don't hide the loader here if login was successful, since we're redirecting
     }
   };
 
@@ -315,13 +356,22 @@ export default function LoginPage() {
     //   return;
     // }
 
+    setShowGlobalLoader(true); // Show full-screen loader
+    setLoaderMessage("Connecting to Google..."); // Set custom message
+    setIsRedirecting(true); // Set redirecting state
+
     try {
-      await signIn("google", {
-        callbackUrl: "/dashboard",
-      });
+      // Use a slight delay before redirecting to ensure loader is visible
+      setTimeout(async () => {
+        await signIn("google", {
+          callbackUrl: "/dashboard",
+        });
+      }, 500);
     } catch (error) {
       console.error("Google login error:", error);
       toast.error("Google login failed");
+      setShowGlobalLoader(false); // Hide loader on error
+      setIsRedirecting(false); // Reset redirecting state
     }
   };
 
@@ -330,21 +380,11 @@ export default function LoginPage() {
     setForgotPasswordModalOpen(true);
   };
 
-  if (isSessionLoading) {
-    return (
-      <div className="bgc-thm4 min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </div>
-          <p className="mt-2">Checking authentication status...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="bgc-thm4">
+      {/* Full-screen loader - always render but conditionally show */}
+      {showGlobalLoader && <FullScreenLoader message={loaderMessage} />}
+      
       <Header20 />
       <section className="our-login py-5">
         <div className="container">
@@ -379,7 +419,7 @@ export default function LoginPage() {
                     type="button"
                     onClick={handleGoogleLogin}
                     className="ud-btn btn-google fz14 fw400 d-flex align-items-center justify-content-center w-100"
-                    disabled={isLoading || loginAttempts >= 5}
+                    disabled={isLoading || loginAttempts >= 5 || isRedirecting}
                   >
                     <i className="fab fa-google me-2" /> Sign in with Google
                   </button>
@@ -547,7 +587,7 @@ export default function LoginPage() {
                           className="ud-btn btn-thm default-box-shadow2"
                           type="submit"
                           disabled={
-                            isLoading || isSubmitting || loginAttempts >= 5
+                            isLoading || isSubmitting || loginAttempts >= 5 || isRedirecting
                           }
                         >
                           {isLoading || isSubmitting ? (
