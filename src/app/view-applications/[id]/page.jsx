@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import ProjectApplications from "@/components/project/ProjectApplications"; // पथ अपने अनुसार बदलें
+import ProjectApplications from "@/components/project/ProjectApplications"; 
 import { commonService } from "@/services/common";
 import { useSearchParams } from "next/navigation";
 import Breadcumb from "@/components/custom/dashboard/common/Breadcumb";

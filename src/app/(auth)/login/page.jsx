@@ -37,6 +37,184 @@ const forgotPasswordSchema = z.object({
 });
 
 // ForgotPasswordModal component
+// function ForgotPasswordModal({ isOpen, onClose, defaultEmail = "" }) {
+//   const [loading, setLoading] = useState(false);
+//   const [success, setSuccess] = useState(false);
+
+//   const {
+//     register,
+//     handleSubmit,
+//     formState: { errors },
+//     reset,
+//     setValue,
+//   } = useForm({
+//     resolver: zodResolver(forgotPasswordSchema),
+//     defaultValues: {
+//       email: defaultEmail,
+//     },
+//   });
+
+//   // Set default email when prop changes
+//   const onSubmit = async (data) => {
+//     setLoading(true);
+//     try {
+//       // For development/testing
+//       if (window.location.hostname === 'localhost') {
+//         // Mock successful response for local development
+//         setTimeout(() => {
+//           setSuccess(true);
+//           toast.success("Password reset link sent to your email");
+//           reset();
+//         }, 1500);
+//         return;
+//       }
+      
+//       // For production
+//       try {
+//         const response = await freelancerService.forgotPassword({
+//           email: data.email.trim()
+//         });
+        
+//         // If we get here, the request was successful
+//         setSuccess(true);
+//         toast.success("Password reset link sent to your email");
+//         reset();
+//       } catch (apiError) {
+//         console.error("API Error Details:", apiError);
+        
+//         // Check if we have a meaningful error message from the server
+//         if (apiError.response && apiError.response.data && apiError.response.data.message) {
+//           toast.error(apiError.response.data.message);
+//         } else if (apiError.response && apiError.response.status === 500) {
+//           toast.error("The server encountered an internal error. Please try again later or contact support.");
+//         } else {
+//           toast.error("Failed to send reset link. Please try again later.");
+//         }
+//       }
+//     } catch (error) {
+//       console.error("Error sending reset link:", error);
+//       toast.error("Something went wrong. Please try again later.");
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   // Handle closing the modal
+//   const handleClose = () => {
+//     // Reset form state when closing
+//     setSuccess(false);
+//     onClose();
+//   };
+
+//   if (!isOpen) return null;
+
+//   return (
+//     <>
+//       <div className="modal-backdrop fade show" style={{ zIndex: 1050 }}></div>
+//       <div
+//         className="modal fade show"
+//         tabIndex="-1"
+//         style={{ display: "block", zIndex: 1055 }}
+//       >
+//         <div className="modal-dialog modal-dialog-centered">
+//           <div className="modal-content">
+//             <div className="modal-header">
+//               <h5 className="modal-title">Reset Your Password</h5>
+//               <button
+//                 type="button"
+//                 className="btn-close"
+//                 onClick={handleClose}
+//                 aria-label="Close"
+//               ></button>
+//             </div>
+//             <div className="modal-body">
+//               {success ? (
+//                 <div className="text-center">
+//                   <div className="icon-success mb20">
+//                     <i className="fas fa-check-circle fa-3x text-success"></i>
+//                   </div>
+//                   <h4 className="mb20">Email Sent Successfully!</h4>
+//                   <p className="mb30">
+//                     We've sent a password reset link to your email address.
+//                     <br />
+//                     Please check your inbox (and spam folder) and follow the
+//                     instructions.
+//                   </p>
+//                   <div className="d-grid mb20">
+//                     <button className="ud-btn btn-thm" onClick={handleClose}>
+//                       Back to Login <i className="fal fa-arrow-right-long"></i>
+//                     </button>
+//                   </div>
+//                 </div>
+//               ) : (
+//                 <>
+//                   <div className="mb30 text-center">
+//                     <div className="mb20">
+//                       <i className="fas fa-unlock-alt fa-3x text-thm"></i>
+//                     </div>
+//                     <h4>Forgot Your Password?</h4>
+//                     <p className="text">
+//                       Enter your email address below and we'll send you
+//                       instructions to reset your password.
+//                     </p>
+//                   </div>
+//                   <form onSubmit={handleSubmit(onSubmit)}>
+//                     <div className="mb30">
+//                       <label className="form-label fw600 dark-color">
+//                         Email Address
+//                       </label>
+//                       <div className="input-group">
+//                         <span className="input-group-text bgc-white border-right-0">
+//                           <i className="far fa-envelope"></i>
+//                         </span>
+//                         <input
+//                           type="email"
+//                           className={`form-control border-left-0 ${
+//                             errors.email ? "is-invalid" : ""
+//                           }`}
+//                           placeholder="Your email address"
+//                           {...register("email")}
+//                         />
+//                       </div>
+//                       {errors.email && (
+//                         <div className="text-danger mt-1 fz14">
+//                           {errors.email.message}
+//                         </div>
+//                       )}
+//                     </div>
+//                     <div className="d-grid mb20">
+//                       <button
+//                         className="ud-btn btn-thm"
+//                         type="submit"
+//                         disabled={loading}
+//                       >
+//                         {loading ? (
+//                           <>
+//                             <span
+//                               className="spinner-border spinner-border-sm me-2"
+//                               role="status"
+//                               aria-hidden="true"
+//                             ></span>
+//                             Sending...
+//                           </>
+//                         ) : (
+//                           <>
+//                             Send Reset Link{" "}
+//                             <i className="fal fa-arrow-right-long"></i>
+//                           </>
+//                         )}
+//                       </button>
+//                     </div>
+//                   </form>
+//                 </>
+//               )}
+//             </div>
+//           </div>
+//         </div>
+//       </div>
+//     </>
+//   );
+// }
 function ForgotPasswordModal({ isOpen, onClose, defaultEmail = "" }) {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -55,25 +233,26 @@ function ForgotPasswordModal({ isOpen, onClose, defaultEmail = "" }) {
   });
 
   // Set default email when prop changes
+  useEffect(() => {
+    if (defaultEmail) {
+      setValue("email", defaultEmail);
+    }
+  }, [defaultEmail, setValue]);
+
   const onSubmit = async (data) => {
     setLoading(true);
     try {
-      // For development/testing
-      if (window.location.hostname === 'localhost') {
-        // Mock successful response for local development
-        setTimeout(() => {
-          setSuccess(true);
-          toast.success("Password reset link sent to your email");
-          reset();
-        }, 1500);
-        return;
-      }
+      // Always send the actual API request, even in development environment
+      console.log("Sending forgot password request", {
+        email: data.email.trim()
+      });
       
-      // For production
       try {
         const response = await freelancerService.forgotPassword({
           email: data.email.trim()
         });
+        
+        console.log("Forgot password response:", response);
         
         // If we get here, the request was successful
         setSuccess(true);
@@ -81,6 +260,12 @@ function ForgotPasswordModal({ isOpen, onClose, defaultEmail = "" }) {
         reset();
       } catch (apiError) {
         console.error("API Error Details:", apiError);
+        
+        // More detailed error logging
+        if (apiError.response) {
+          console.log("Response status:", apiError.response.status);
+          console.log("Response data:", apiError.response.data);
+        }
         
         // Check if we have a meaningful error message from the server
         if (apiError.response && apiError.response.data && apiError.response.data.message) {
@@ -321,6 +506,7 @@ export default function LoginPage() {
         remember: values.rememberMe,
         redirect: false,
       });
+console.log("result",result);
 
       if (result?.ok) {
         resetForm();
